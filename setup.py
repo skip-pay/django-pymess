@@ -36,6 +36,7 @@ setup(
         'skip-django-chamber>=0.7.2',
         'beautifulsoup4==4.8.0',
         'skip-django-choice-enumfields>=1.1.3.2',
+        'python-dateutil>=2.9.0',
     ],
     zip_safe=False
 )
