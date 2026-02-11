@@ -18,6 +18,7 @@ class OneSignalPushNotificationBackend(PushNotificationBackend):
         'APP_ID': None,
         'API_KEY': None,
         'LANGUAGE': None,
+        'BASE_API_URL': None,
         'TIMEOUT': 5,  # 5s
     }
 
@@ -28,8 +29,11 @@ class OneSignalPushNotificationBackend(PushNotificationBackend):
         return result.is_error or self._is_result_partial_error(result)
 
     def publish_message(self, message):
-        onesignal_client = OneSignalClient(self.config['APP_ID'],
-                                           self.config['API_KEY'])
+        onesignal_client = OneSignalClient(
+            self.config['APP_ID'],
+            self.config['API_KEY'],
+            base_api_url=self.config['BASE_API_URL'],
+        )
         onesignal_client.session = generate_session(
             slug='pymess - OneSignal',
             related_objects=(message,),

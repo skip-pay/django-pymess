@@ -192,6 +192,8 @@ Backend is a class that is used for sending messages. Every backend must provide
         'APP_ID': 'app-id',
         'API_KEY': 'api-key,
         'LANGUAGE': 'language',
+        'BASE_API_URL': 'https://api.onesignal.com',
+        'TIMEOUT': 5,
     }
 
 
