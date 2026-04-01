@@ -26,6 +26,8 @@ class MandrillState(str, Enum):
     SCHEDULED = 'SCHEDULED'
     REJECTED = 'REJECTED'
     INVALID = 'INVALID'
+    BOUNCED = 'BOUNCED'
+    SOFT_BOUNCED = 'SOFT_BOUNCED'
 
 
 class MandrillEmailBackend(EmailBackend):
@@ -33,12 +35,16 @@ class MandrillEmailBackend(EmailBackend):
     E-mail backend implementing Mandrill service (https://mandrillapp.com/api/docs/index.python.html).
     """
 
+    # Note: Mandrill states should not be mapped to EmailMessageState.ERROR_RETRY because such messages would be sent
+    #       again and could cause duplicates since Mandrill would retry such messages by itself
     MANDRILL_STATES_MAPPING = {
         MandrillState.SENT: EmailMessageState.SENT,
-        MandrillState.QUEUED: EmailMessageState.SENT,
-        MandrillState.SCHEDULED: EmailMessageState.SENT,
+        MandrillState.QUEUED: EmailMessageState.SENDING,
+        MandrillState.SCHEDULED: EmailMessageState.SENDING,
         MandrillState.REJECTED: EmailMessageState.ERROR,
         MandrillState.INVALID: EmailMessageState.ERROR,
+        MandrillState.BOUNCED: EmailMessageState.ERROR,
+        MandrillState.SOFT_BOUNCED: EmailMessageState.ERROR,
     }
 
     config = {
@@ -72,6 +78,19 @@ class MandrillEmailBackend(EmailBackend):
         )
         return mandrill_client
 
+    @classmethod
+    def get_email_message_state(cls, mandrill_state, info):
+        if not isinstance(mandrill_state, str):
+            return None
+
+        if isinstance(info, dict) and info.get('opens'):
+            return EmailMessageState.OPENED
+
+        try:
+            return cls.MANDRILL_STATES_MAPPING[MandrillState(mandrill_state.replace('-', '_').upper())]
+        except (KeyError, ValueError):
+            return None
+
     def publish_message(self, message):
         mandrill_client = self._create_client(message)
         try:
@@ -93,8 +112,8 @@ class MandrillEmailBackend(EmailBackend):
                     'attachments': self._serialize_attachments(message)
                 },
             )[0]
-            mandrill_state = MandrillState(result['status'].upper())
-            state = self.MANDRILL_STATES_MAPPING.get(mandrill_state)
+            mandrill_state = MandrillState(result['status'].replace('-', '_').upper())
+            state = self.get_email_message_state(result['status'], result)
             error = None
             if mandrill_state == MandrillState.INVALID:
                 error = gettext('invalid')
@@ -122,15 +141,19 @@ class MandrillEmailBackend(EmailBackend):
     def pull_message_info(self, message):
         if message.external_id:
             mandrill_client = self._create_client(message)
+
             try:
                 info = mandrill_client.messages.info(message.external_id)
-                self._update_message(
-                    message,
-                    extra_sender_data={**message.extra_sender_data, 'info': info},
-                    info_changed_at=timezone.now(),
-                    update_only_changed_fields=True,
-                )
             except mandrill.UnknownMessageError:
                 self._update_message(message, info_changed_at=timezone.now(), update_only_changed_fields=True)
+                return
+
+            self._update_message(
+                message,
+                extra_sender_data={**message.extra_sender_data, 'info': info},
+                state=self.get_email_message_state(info.get('state'), info) or message.state,
+                info_changed_at=timezone.now(),
+                update_only_changed_fields=True,
+            )
         else:
             self._update_message(message, info_changed_at=timezone.now(), update_only_changed_fields=True)

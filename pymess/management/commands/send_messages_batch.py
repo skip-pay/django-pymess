@@ -80,7 +80,7 @@ class Command(BaseCommand):
         try:
             for _ in range(controller.get_batch_size()):
                 if self._is_system_shutting_down():
-                    self.stdout.write("System is shutting down, exitting gracefully.")
+                    self.stdout.write("System is shutting down, exiting gracefully.")
                     break
                 if not self._send_message(controller):
                     break

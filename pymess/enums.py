@@ -35,6 +35,7 @@ class EmailMessageState(IntegerChoicesEnum):
     ERROR = 4, _('error')
     DEBUG = 5, _('debug')
     ERROR_RETRY = 6, _('error retry')
+    OPENED = 7, _('opened')
 
 
 class PushNotificationMessageState(IntegerChoicesEnum):

@@ -2,7 +2,7 @@
 
 install-dev:
 	pip install -r requirements-dev.txt
-	pip install -e .
+	pip install -e ".[mandrill]"
 
 test:
 	coverage run -m pytest

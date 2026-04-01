@@ -31,6 +31,7 @@ setup(
         'Programming Language :: Python',
         'Topic :: Internet :: WWW/HTTP',
     ],
+    python_requires='>=3.10',
     install_requires=[
         'django>=4.2',
         'skip-django-chamber>=0.7.2',
@@ -38,5 +39,8 @@ setup(
         'skip-django-choice-enumfields>=1.1.3.2',
         'python-dateutil>=2.9.0',
     ],
+    extras_require={
+        'mandrill': ['mandrill-really-maintained>=1.2.4', 'skip-django-is-core>=2.29.1'],
+    },
     zip_safe=False
 )

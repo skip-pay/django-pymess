@@ -72,8 +72,13 @@ build/config
 
 # Python Package #
 #################
+build/
 skip_django_pymess.egg-info/
 
 # Runtime data #
 ################
 pymess/emails/contents/*.txt
+
+# AI #
+######
+CLAUDE.md
