@@ -25,15 +25,19 @@ class Command(BaseCommand):
         self.updated_messages = set()
 
     def _get_messages_queryset_to_update(self, email_controller):
+        """
+        Returns messages eligible for polling, that is:
+
+        - Info has never been pulled or predates the last webhook call received.
+        - The last webhook call arrived more than `EMAIL_PULL_INFO_DELAY_SECONDS` ago.
+        - The message was sent within `EMAIL_PULL_INFO_MAX_TIMEOUT_FROM_SENT_SECONDS`.
+        """
         delay = datetime.timedelta(seconds=settings.EMAIL_PULL_INFO_DELAY_SECONDS)
         return email_controller.model.objects.filter(
-            # start_time = last_webhook_received_at + delay
-            # info_changed_at < start_time
-            # info_changed_at < last_webhook_received_at + delay
-            Q(info_changed_at__isnull=True) | Q(info_changed_at__lt=F('last_webhook_received_at') + delay),
+            Q(info_changed_at__isnull=True) | Q(info_changed_at__lt=F('last_webhook_received_at')),
             last_webhook_received_at__lt=now() - delay,
             sent_at__gt=now() - datetime.timedelta(seconds=settings.EMAIL_PULL_INFO_MAX_TIMEOUT_FROM_SENT_SECONDS)
-        ).order_by('-sent_at')
+        ).order_by('sent_at')
 
     @smart_atomic
     def _pull_message_info(self, email_controller):

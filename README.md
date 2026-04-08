@@ -36,6 +36,12 @@ Install using pip:
 pip install skip-django-pymess
 ```
 
+Install with extra packages using pip:
+
+```bash
+pip install skip-django-pymess[mandrill]
+```
+
 Add 'pymess' to your INSTALLED_APPS in settings.py:
 
 ```python
